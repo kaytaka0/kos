@@ -30,7 +30,7 @@ KosLoaderPkg/以下にLoad.inf, Main.c, KosLoaderPkg.dec, KosLoaderPkg.decの４
 →Loader.efiが生成されるため、これをBOOTX64.EFIとして保存する。(run_qemu.shで実行できる)
 
 実行結果：edkでハローワールド(めっちゃ誤字している)
-![edk-hello](../img/kos-d2-ed-hello.png)
+![edk-hello](../img/kos-d2-edk-hello.png)
 
 今後このアプリケーションをブートローダとして拡張していく
 
@@ -134,4 +134,4 @@ UEFIでピクセル色指定をした結果
 - 次にカーネルでピクセルを描く+エラー処理
 - gBSの各関数の戻り値(EFI_STATUS型)をチェックしてエラーの場合には、メッセージ表示＋hltを行う。
 
-![kernel color](../img/kos-day03-uefi-color.pngj)
+![kernel color](../img/kos-day03-uefi-color.png)
