@@ -10,7 +10,7 @@
 BOOTX64.EFIというファイルにバイナリを打ち込んで、起動する。gitに完成済みのEFIファイルがあるが、初めての作業なのでoctetaで一つずつ１６進数を打ち込むことにした。
 qemuで「Hello, workd」を表示できた。
 
-![hello-woeld](./img/kos-d1-hello-world.png)
+![hello-woeld](../img/kos-d1-hello-world.png)
 
 C言語で同じ動作をするEFIファイルを作成する。
 Cプログラム→（コンパイラ clang）→オブジェクトファイル→ (リンカ lld-link) → EFIファイル(hello.efi)
@@ -30,7 +30,7 @@ KosLoaderPkg/以下にLoad.inf, Main.c, KosLoaderPkg.dec, KosLoaderPkg.decの４
 →Loader.efiが生成されるため、これをBOOTX64.EFIとして保存する。(run_qemu.shで実行できる)
 
 実行結果：edkでハローワールド(めっちゃ誤字している)
-![edk-hello](./img/kos-d2-ed-hello.png)
+![edk-hello](../img/kos-d2-ed-hello.png)
 
 今後このアプリケーションをブートローダとして拡張していく
 
@@ -68,3 +68,70 @@ Index, Type, Type(name), PhysicalStart, NumberOfPages, Attribute
 ```
 
 第二章おわり！
+
+## 3/5
+第３章レジスタ
+
+QEMUモニタの使い方(GDBと同じか？) [wikibooks](https://en.wikibooks.org/wiki/QEMU/Monitor)
+- info registers
+- x/2i 0x067ae4c4
+
+
+- 初めてのkernel作成
+- ブートローダとkernelは別ファイルとして開発する
+- カーネルのコンパイル時にエラーが出た
+```bash
+# kernel/main.cpp のコンパイル
+~/kos/kernel$ clang++ -O2 -Wall --target=X86_64-elf -ffreestanding -mno-red-zone -fno-exceptions -fno-rtti -std=c++17 -c main.cpp
+clang: warning: argument unused during compilation: '-mno-red-zone' [-Wunused-command-line-argument]
+error: unknown target triple 'X86_64---elf', please use -triple or -arch
+```
+
+- `--target`フラグなしでコンパイルを実行して解決
+- コンパイラがmain.oを生成する
+- 次にリンカを実行して、main.oから実行可能ファイル(elf)を作成する
+```bash
+~/kos/kernel$ ld.lld --entry KernelMain -z norelro --image-base 0x100000 --static -o kernel.elf main.o
+```
+
+```
+main.cpp -> (clang++でコンパイル) -> main.o -> (ld.lldでリンク) -> kernel.elf
+```
+
+- 次に、ブートローダを拡張してカーネルファイルを読み込む機能を追加する
+- 謎のオフセット24バイト（下記コード）
+- → ELFの仕様で、64bit用のEFLのエントリポイントアドレスは、オフセット24バイトの位置から8バイト整数で書かれている。
+```c
+   // Boot kernel
+    UINT64 entry_addr = *(UINT64*)(kernel_base_addr + 24);
+
+    typedef void EntryPointType(void);
+    EntryPointType* entry_point = (EntryPointType*)entry_addr;
+    entry_point();
+```
+
+- kernelのロード＋起動成功
+![kernel-load](../img/kos-day03-kernel.png)
+
+
+- 画面の色をいじっていく
+- まずはブートローダでピクセルを描く(UEFIのGOP機能)
+- openProtocol関数でgopを取得する
+```c
+gBS->OpenProtocol(
+        gop_handles[0],
+        &gEfiGraphicsOutputProtocolGuid,
+        (VOID**)gop,
+        image_handle,
+        NULL,
+        EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL
+    );
+```
+
+UEFIでピクセル色指定をした結果
+![uefi color](../img//kos-day03-uefi-color.png)
+
+- 次にカーネルでピクセルを描く+エラー処理
+- gBSの各関数の戻り値(EFI_STATUS型)をチェックしてエラーの場合には、メッセージ表示＋hltを行う。
+
+![kernel color](../img/kos-day03-uefi-color.pngj)
