@@ -154,3 +154,25 @@ UEFIでピクセル色指定をした結果
 } else {
 ```
 - これでピクセルの描画を楽に記述できるようになった。
+
+
+- ローダの改良
+  - カーネルの読み込み処理で、メモリ上に確保するメモリサイズを計算する処理が間違っている。
+  - kernel.elfの情報 (ELFプログラムヘッダのLOAD部分) を見て、正しいサイズのメモリを確保するように修正する。
+
+- 書き換えたがなぜか以下のエラーが出てkernelが実行されない。
+```
+failed to allocate pages: Not Found
+```
+
+= 取得しようとしているページ数が大きすぎた
+- num_pagesの計算で`0xfff`を乗算しているのがミス
+```c
+UINTN num_pages = (kernel_last_addr - kernel_first_addr * 0xfff) / 0x1000;
+    status = gBS->AllocatePages(
+        AllocateAddress,
+        EfiLoaderData,
+        num_pages,
+        &kernel_first_addr
+    );
+```
