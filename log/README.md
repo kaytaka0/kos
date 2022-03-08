@@ -135,3 +135,22 @@ UEFIでピクセル色指定をした結果
 - gBSの各関数の戻り値(EFI_STATUS型)をチェックしてエラーの場合には、メッセージ表示＋hltを行う。
 
 ![kernel color](../img/kos-day03-uefi-color.png)
+
+## 3/8
+
+第４章 make入門
+
+- kernelのコード (main.cpp) にピクセルを描画する処理を追加する。
+- なぜか黄色が表示される。。。
+
+![](../img/kos-day04-bug.png)
+- 原因はフレームバッファにred要素を書いていなかったことだった。`p[2] = c.r`の記述がない。
+```c
+// main.cpp WritePixel関数内
+} else if (config.pixel_format == kPixelBGRResv8BitPerColor) {
+    uint8_t* p = &config.frame_buffer[4 * pixel_position];
+    p[0] = c.b;
+    p[1] = c.g;
+} else {
+```
+- これでピクセルの描画を楽に記述できるようになった。
