@@ -176,3 +176,28 @@ UINTN num_pages = (kernel_last_addr - kernel_first_addr * 0xfff) / 0x1000;
         &kernel_first_addr
     );
 ```
+
+## 3/9
+第５章　文字表示とコンソールクラス
+
+- ピクセルの描画はできるようになっているので、それを用いて文字を描画する
+![font A](../img/kos-day05-print-font-a.png)
+
+- 参照とポインタの使い分け
+  - ポインタ：C言語からある機能。`nullptr`とか書くだけで簡単にNULLポインタを作成できる。
+  - 参照：C++で追加された機能。NULL参照が作りにくい。引数で参照を指定することでNULLではないものを渡してほしいという意思表示として使える。
+
+- フォントのファイルをカーネルファイルに組み込む
+- ELFなどではないバイナリも、実行可能ファイルにリンクしてプログラムから変数として見えるようにすることができる。これは知らなかったためかなり勉強になった。
+```bash
+// hankaku.bin(フラットバイナリ)→hankaku.o(ELFオブジェクトファイル)
+$ objcopy -I binary -O elf64-x86-64 -B i386:x86-64 hankaku.bin hankaku.o
+$ file hankaku.o 
+hankaku.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), not stripped
+```
+- ASCII文字列を一通り利用できるようになった。
+![ASCII](../img/kos-day05-ascii.png)
+
+
+- 文字の折返し、スクロールなどを行うconsoleクラスの実装　完了
+![console](../img/kos-day05-console.png)
