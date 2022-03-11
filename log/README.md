@@ -201,3 +201,20 @@ hankaku.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), not stripped
 
 - 文字の折返し、スクロールなどを行うconsoleクラスの実装　完了
 ![console](../img/kos-day05-console.png)
+
+## 3/11
+
+第6章 マウス入力とPCIe
+
+- UIのアップデート。背景に色をつけ、画面下にタスクバーを模した長方形を描画することでそれらしい見た目になった。
+- ホストマシン (ubuntu) を再起動すると、環境変数がリセットされたことでkernelをビルドするためのmakeコマンドが失敗した。
+- 起動時に環境変数が自動で設定されるように、$HOME/.bashrcに下記を追記する
+```bash
+# .bashrc
+source $HOME/osbook/devenv/buildenv.sh
+```
+
+- USBホストドライバを実装する
+- USB (Universal Serial Bus)　←地味に知らなかった
+- ドライバの実装がどんなのものなのか知らなかったので、何よりもこの章が楽しみだった。
+- →ドライバの実装には解説はないらしい。残念。
