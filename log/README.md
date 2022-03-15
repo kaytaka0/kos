@@ -218,3 +218,40 @@ source $HOME/osbook/devenv/buildenv.sh
 - USB (Universal Serial Bus)　←地味に知らなかった
 - ドライバの実装がどんなのものなのか知らなかったので、何よりもこの章が楽しみだった。
 - →ドライバの実装には解説はないらしい。残念。
+
+
+- PCIデバイスの読み取り
+- IOアドレス空間：メモリアドレス空間とは別のアドレス空間。周辺機器用のアドレス空間。
+- PCIコンフィグレーション空間（周辺機器にある）にアクセスするためにIOアドレス空間を利用する。
+
+- ScanAllBus関数では、PCIデバイスをすべて探索している
+- bus=0, device=0, function=0から検索する
+  - device: 1つのバスに最大32個まで
+  - function: 1つのデバイスに最大8個まで
+- なぜfunctionで探索している？
+
+- PCIファンクションがPCI-to-PCIブリッジ（２つのPCIバスをつなぐブリッジ）である場合、ブリッジの下流側のバスに対して、PCIデバイスを探索する。
+- PCI-to-PCIブリッジは、PCIデバイスの最大接続数を増やすために利用される。
+```cpp
+Error ScanAllBus() {
+    ...
+
+    for (uint8_t function = 1; function < 8; ++function) {
+        if (ReadVendorId(0, 0, function) == 0xffffu) {
+            continue;
+        }
+        // ScanBusの引数はbus番号のはずだが、function番号として1-8を引数に入れている。なぜ？
+        if (auto err = ScanBus(function)) {
+            return err;
+        }
+    }
+    return Error::kSuccess;
+}
+```
+
+
+- PCIデバイスの探索+表示に成功
+
+![pci devices](../img/kos-day06-pci-devices.png)
+
+- ポーリングでマウス入力を読み取る
