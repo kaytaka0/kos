@@ -255,3 +255,29 @@ Error ScanAllBus() {
 ![pci devices](../img/kos-day06-pci-devices.png)
 
 - ポーリングでマウス入力を読み取る
+
+
+- 6.4節のコードをビルドする際にエラーが発生した。
+- エラーの要点と思われる箇所はこちら：`ld.lld: error: cundefined symbol: _exit`
+- 
+```bash
+$ make
+ld.lld -L/home/user/osbook/devenv/x86_64-elf/lib --entry KernelMain -z norelro --image-base 0x100000 --static -o kernel.elf main.o graphics.o mouse.o font.o hankaku.o newlib_support.o console.o pci.o asmfunc.o libcxx_support.o logger.o usb/memory.o usb/device.o usb/xhci/ring.o usb/xhci/trb.o usb/xhci/xhci.o usb/xhci/port.o usb/xhci/device.o usb/xhci/devmgr.o usb/xhci/registers.o usb/classdriver/base.o usb/classdriver/hid.o usb/classdriver/keyboard.o usb/classdriver/mouse.o -lc -lc++
+ld.lld: error: cundefined symbol: _exit
+>>> referenced by abort.c
+>>>               lib_a-abort.o:(abort) in archive /home/user/osbook/devenv/x86_64-elf/lib/libc.a
+
+ld.lld: error: undefined symbol: kill
+>>> referenced by signalr.c
+>>>               lib_a-signalr.o:(_kill_r) in archive /home/user/osbook/devenv/x86_64-elf/lib/libc.a
+
+ld.lld: error: undefined symbol: getpid
+>>> referenced by signalr.c
+>>>               lib_a-signalr.o:(_getpid_r) in archive /home/user/osbook/devenv/x86_64-elf/lib/libc.a
+make: *** [Makefile:25: kernel.elf] Error 1
+```
+
+- newlib_support.cにライブラリ関数を追加するのを忘れていた。みかん本に挑戦している別の方の[ページ](https://zenn.dev/link/comments/74146f544f98f3)の記述から気づくことができた。
+
+- カーソルを動かすことに成功した。デバッグにかなり長い時間(4時間ほど)かかってしまった。。
+![cursor](../img/kos-day06-cursor.png)
