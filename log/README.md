@@ -281,3 +281,34 @@ make: *** [Makefile:25: kernel.elf] Error 1
 
 - カーソルを動かすことに成功した。デバッグにかなり長い時間(4時間ほど)かかってしまった。。
 ![cursor](../img/kos-day06-cursor.png)
+
+
+## 3/18
+第7章 割り込みハンドラ
+
+- 特殊なアドレス空間
+  - アドレス空間の中には、メインメモリに配置されている領域だけではなく、CPUレジスタに領域が配置されている範囲もある。
+  - 0xfee00000から0xfee00400までのアドレス (1024バイト) は、メインメモリではなくCPUのレジスタに配置されている。　
+  - 特に0xfee000b0番地への書き込みを行うことで、割り込み処理の終了をCPUに伝えることができる。
+- C++の記法
+  - `__attribute__((interrupt))`修飾子：割り込みハンドラであることを伝える。これがついている関数には、コンパイル時にコンテキストの保存と復帰処理が挿入される。
+  - `__attribute__((packed))`修飾子：コンパイラは本来自動で変数のアラインメントを行うが、これがついている変数に対しては、変数のアラインメントを行わない。
+  - `reinterpret_cast<型>`：ポインタ型もしくは整数型(int, longなど)を、任意の型のポインタに変換する。[参考](https://www.yunabe.jp/docs/cpp_casts.html)あくまでコンパイラに型情報を伝えるためなので、生成されるコードは普通変わらない。
+
+
+
+```cpp
+union InterruptDescriptorAttribute {
+  // このdata変数は、bits変数のサイズ(16bit)をコンパイラに伝えるためだけに宣言している
+  // 実際には使用しない
+  uint16_t data;  
+  struct {
+    uint16_t interrupt_stack_table : 3;
+    uint16_t : 5;
+    DescriptorType type : 4;
+    uint16_t : 1;
+    uint16_t descriptor_privilege_level : 2;
+    uint16_t present : 1;
+  } __attribute__((packed)) bits;  // 16bitのメモリ領域を[3bit, 5bit, 4bit, 1bit, 2bit, 1bit]に分けてアクセスすることができる
+} __attribute__((packed));  // アラインメントを行わない
+```
