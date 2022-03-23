@@ -327,4 +327,42 @@ union InterruptDescriptorAttribute {
 
 第8章　メモリ管理
 
-- 
+- メモリマップの表示ができない問題を調査
+- 下記のコードはメモリマップを表示している部分。
+  - 1個目のfor文でMemoryDescriptorの配列を表示
+  - 2個目のfor文で特定のメモリタイプのもののみを表示する(available_memory_types)
+```cpp
+    const std::array available_memory_types{
+      MemoryType::kEfiBootServicesCode,
+      MemoryType::kEfiBootServicesData,
+      MemoryType::kEfiConventionalMemory,
+    };
+
+    printk("memoru_map: %p\n", &memory_map);
+
+    printk("memory_map.buffer: %p\n", memory_map.buffer);
+    printk("memory_map.map_size: %d\n", memory_map.map_size);
+    printk("memory_map.descriptor_size: %d\n", memory_map.descriptor_size);
+    for (uintptr_t iter = reinterpret_cast<uintptr_t>(memory_map.buffer);
+         iter < reinterpret_cast<uintptr_t>(memory_map.buffer) + memory_map.map_size;
+         iter += memory_map.descriptor_size) {
+      auto desc = reinterpret_cast<MemoryDescriptor*>(iter);
+      for (int i=0; i < available_memory_types.size(); ++i) {
+        if (desc->type == available_memory_types[i]) {
+          printk("type = %u, phys = %08lx - %08lx, pages = %lu, attr = %08lx\n",
+              desc->type,
+              desc->physical_start,
+              desc->physical_start + desc->number_of_pages * 4096 - 1,
+              desc->number_of_pages,
+              desc->attribute);
+        }
+      }
+    }
+```
+- printkでmemory_map構造体の要素を表示した結果が以下のようになった。
+![Cannot print mmap](../img/kos-day08-cannot-print-mmap.png)
+- `memory_map.descriptor_size`が異常に大きいことがわかる。
+- → memory_map変数が正しくセットされていないことが考えられる。
+- 解決：memory_mapはブートローダからKernelMainに渡される際に、引数を経由させているが、ブートローダ側のコード(Main.cpp)で引数を設定していなかった。
+
+![](../img/kos-08-mmap.png)
