@@ -365,4 +365,5 @@ union InterruptDescriptorAttribute {
 - → memory_map変数が正しくセットされていないことが考えられる。
 - 解決：memory_mapはブートローダからKernelMainに渡される際に、引数を経由させているが、ブートローダ側のコード(Main.cpp)で引数を設定していなかった。
 
-![](../img/kos-08-mmap.png)
+![memory map](../img/kos-08-mmap.png)
+
