@@ -1,4 +1,6 @@
-
+BOOTX64.EFI
+.vscode/
+kernel/kernel.elf
   
 # Prerequisites
 *.d

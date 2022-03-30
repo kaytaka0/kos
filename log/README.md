@@ -367,3 +367,9 @@ union InterruptDescriptorAttribute {
 
 ![memory map](../img/kos-08-mmap.png)
 
+- メモリ割当要求に対応できるようにする。つまり、空きメモリ領域の管理が必要になるので実装していく。
+- 上記を行うために、３つのデータ構造をOS管理のメモリ領域に移動させる。（これまではUEFI管理のメモリ領域にあった）
+  - スタック領域
+  - GDT (Global Descriptor Table)
+  - ページテーブル
+
