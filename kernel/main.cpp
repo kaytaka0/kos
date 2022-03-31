@@ -24,6 +24,7 @@
 #include "memory_map.hpp"
 #include "segment.hpp"
 #include "paging.hpp"
+#include "memory_manager.hpp"
 
 const PixelColor kDesktopBGColor{45, 118, 237};  // blue
 const PixelColor kDesktopFGColor{255, 255, 255}; // black
@@ -50,6 +51,8 @@ int printk(const char* format, ...) {
     return result;
 }
 
+char memory_manager_buf[sizeof(BitmapMemoryManager)];
+BitmapMemoryManager* memory_manager;
 
 char mouse_cursor_buf[sizeof(MouseCursor)];
 MouseCursor* mouse_cursor;
@@ -151,29 +154,35 @@ extern "C" void kernelMainNewStack(
     SetCSSS(kernel_cs, kernel_ss);
     SetupIdentityPageTable();
 
-    const std::array available_memory_types{
-      MemoryType::kEfiBootServicesCode,
-      MemoryType::kEfiBootServicesData,
-      MemoryType::kEfiConventionalMemory,
-    };
+    // メモリマネージャに使用済み領域を記録する
+    :: memory_manager = new(memory_manager_buf) BitmapMemoryManager;
 
-    // メモリマップの表示
-    printk("memory_map: %p\n", &memory_map);
-    for (uintptr_t iter = reinterpret_cast<uintptr_t>(memory_map.buffer);
-         iter < reinterpret_cast<uintptr_t>(memory_map.buffer) + memory_map.map_size;
+    const auto memory_map_base = reinterpret_cast<uintptr_t>(memory_map.buffer);
+    uintptr_t available_end = 0;
+    for (uintptr_t iter = memory_map_base;
+         iter < memory_map_base + memory_map.map_size;
          iter += memory_map.descriptor_size) {
       auto desc = reinterpret_cast<MemoryDescriptor*>(iter);
-      for (int i=0; i < available_memory_types.size(); ++i) {
-        if (desc->type == available_memory_types[i]) {
-          printk("type = %u, phys = %08lx - %08lx, pages = %lu, attr = %08lx\n",
-              desc->type,
-              desc->physical_start,
-              desc->physical_start + desc->number_of_pages * 4096 - 1,
-              desc->number_of_pages,
-              desc->attribute);
-        }
+      if (available_end < desc->physical_start) {
+        // 使用中のメモリ領域にマークをつける
+        memory_manager->MarkAllocated(
+          FrameID{available_end / kBytesPerFrame},
+          (desc->physical_start - available_end) / kBytesPerFrame
+        );
+      }
+
+      const auto physical_end = desc->physical_start + desc->number_of_pages * kUEFIPageSize;
+      if (IsAvailable(static_cast<MemoryType>(desc->type))) {
+        available_end = physical_end;
+      } else {
+        memory_manager->MarkAllocated(
+          FrameID{desc->physical_start / kBytesPerFrame},
+          desc->number_of_pages * kUEFIPageSize / kBytesPerFrame
+        );
       }
     }
+    // 
+    memory_manager->SetMemoryRange(FrameID{1}, FrameID{available_end / kBytesPerFrame});
 
     mouse_cursor = new(mouse_cursor_buf) MouseCursor{
         pixel_writer, kDesktopBGColor, {300, 200}
