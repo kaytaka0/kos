@@ -5,3 +5,13 @@
 
 
 
+
+## 開発環境
+
+- Ubuntu 20.04
+- X11 forwardingによるGUIウィンドウの転送
+  - Ubuntuマシンで開発＋Macから操作
+  - Client:  M1 Maccbook Air
+  - X11 Server: opensshの機能を利用
+  - X11 Client: XQuartz
+  - コード記述: VSCode Remote ssh + ssh
