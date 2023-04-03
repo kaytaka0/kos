@@ -1,31 +1,35 @@
 #pragma once
 
-
 #include <array>
 #include <limits>
 
 #include "error.hpp"
 
-namespace {
-    constexpr unsigned long long operator""_KiB(unsigned long long kib) {
+namespace
+{
+    constexpr unsigned long long operator""_KiB(unsigned long long kib)
+    {
         return kib * 1024;
     }
 
-    constexpr unsigned long long operator""_MiB(unsigned long long mib) {
+    constexpr unsigned long long operator""_MiB(unsigned long long mib)
+    {
         return mib * 1024_KiB;
     }
 
-    constexpr unsigned long long operator""_GiB(unsigned long long gib) {
+    constexpr unsigned long long operator""_GiB(unsigned long long gib)
+    {
         return gib * 1024_MiB;
     }
 }
 
 static const auto kBytesPerFrame{4_KiB};
 
-class FrameID {
+class FrameID
+{
 public:
     explicit FrameID(size_t id) : id_{id} {};
-    size_t ID() const {return id_;}
+    size_t ID() const { return id_; }
 
 private:
     size_t id_;
@@ -33,9 +37,8 @@ private:
 
 static const FrameID kNullFrame{std::numeric_limits<size_t>::max()};
 
-
-
-class BitmapMemoryManager {
+class BitmapMemoryManager
+{
 public:
     // このメモリ管理クラスで扱える最大の物理メモリ量（バイト）
     static const auto kMaxPhysicalMemoryBytes{128_GiB};
@@ -67,3 +70,5 @@ private:
     bool GetBit(FrameID frame) const;
     void SetBit(FrameID frame, bool allocated);
 };
+
+Error InitializeHeap(BitmapMemoryManager &memory_manager);

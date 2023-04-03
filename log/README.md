@@ -373,3 +373,33 @@ union InterruptDescriptorAttribute {
   - GDT (Global Descriptor Table)
   - ページテーブル
 
+
+第9章　重ね合わせ処理
+
+- layer.hpp, window.hppを追加
+- ウィンドウ描画に，レイヤー機能を追加する章
+- day09aのコードを書き終えたと思った時点で，再起動ループするバグが出た．
+
+![](../img/kos-day09a-reboot-loop.gif)
+
+
+- 上記のバグは，window.hpp内のタイプミスが原因だった．
+  - main.cppの中で，`DrawDesktop(*bgwriter)`が実行される．この時に，`bgwriter`オブジェクトのWidthとHeightを使って，`FillRectangle`が実行される．
+
+```cpp
+// window.hpp
+
+    // window_.Width()ではなく，window_.Height()が整形
+    virtual int Height() const override { return window_.Width(); }
+```
+
+```cpp
+// graphics.cpp
+void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos, const Vector2D<int>& size, const PixelColor& c) {
+  for (int dy = 0; dy < size.y; ++dy) {
+    for ( int dx = 0; dx < size.x; ++dx) {
+      writer.Write(pos.x + dx, pos.y + dy, c);
+    }
+  }
+}
+```
