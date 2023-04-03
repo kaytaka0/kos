@@ -403,3 +403,7 @@ void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos, const Vector2D
   }
 }
 ```
+
+- day09b: マウスの描画が遅いのでタイマーを追加して計測する．
+- マウスを動かすと，1回の更新にかかった時間が表示される．
+![](../img/kos-day09b-timer.gif)
