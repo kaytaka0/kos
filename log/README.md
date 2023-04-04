@@ -407,3 +407,21 @@ void FillRectangle(PixelWriter& writer, const Vector2D<int>& pos, const Vector2D
 - day09b: マウスの描画が遅いのでタイマーを追加して計測する．
 - マウスを動かすと，1回の更新にかかった時間が表示される．
 ![](../img/kos-day09b-timer.gif)
+
+
+- day09c: マウス描画の高速化１・フレームバッファの追加
+- カーソルの描画が消えない問題が発生したので，デバッグを行う．
+  - `FrameBuffer::Copy`の実装にミスがあるという当たりをつけて，ミスを探したが，見つけることができなかった．
+  - 最終的に，配布されている正しいソースコードとのdiffを確認して，以下のコードに間違いがあることを発見した．
+
+![](../img/kos-day09c-framebuffer-bug.png)
+```cpp
+// frame_buffer.cpp FrameBuffer::Copy
+uint8_t* dst_buf = config_.frame_buffer + bytes_per_pixel *
+    (config_.pixels_per_scan_line * copy_start_dst_y + copy_start_dst_x);
+// uint8_t* src_buf = config_.frame_buffer; // 誤
+uint8_t* src_buf = src.config_.frame_buffer; // 正
+```
+
+- 修正後の様子
+![](../img/kos-day09c-framebuffer.gif)
