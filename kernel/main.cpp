@@ -45,6 +45,12 @@ int printk(const char *format, ...)
   result = vsprintf(s, format, ap);
   va_end(ap);
 
+  StartLAPICTimer();
+  console->PutString(s);
+  auto elapsed = LAPICTimerElapsed();
+  StopLAPICTimer();
+
+  sprintf(s, "[%9d]", elapsed);
   console->PutString(s);
   return result;
 }
@@ -61,7 +67,7 @@ void MouseObserver(int8_t displacement_x, int8_t displacement_y)
   layer_manager->Draw();
   auto elapsed = LAPICTimerElapsed();
   StopLAPICTimer();
-  printk("MouseObserverL elapsed = %u\n", elapsed);
+  printk("MouseObserver elapsed = %u\n", elapsed);
 }
 
 void SwitchEhci2Xhci(const pci::Device &xhc_dev)
