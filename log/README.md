@@ -455,3 +455,7 @@ uint8_t* src_buf = src.config_.frame_buffer; // 正
 - hlt命令アリの場合，マウスを動かした時にのみカウントが増加する．
 
 ![](../img/kos-day10c-counter.png)
+
+
+- day10d: ウィンドウのチラチラ解消
+![](../img/kos-day10d-counter.gif)

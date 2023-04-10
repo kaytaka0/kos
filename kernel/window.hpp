@@ -29,7 +29,7 @@ public:
   Window &operator=(const Window &rhs) = delete;
 
   // 与えられたPixelWriterにこのウィンドウの表示領域を描画する
-  void DrawTo(FrameBuffer& dst, Vector2D<int> position);
+  void DrawTo(FrameBuffer& dst, Vector2D<int> position, const Rectangle<int>& area);
   // writerの左上を基準とした描画位置
   void SetTransparentColor(std::optional<PixelColor> c);
   WindowWriter *Writer();
@@ -39,6 +39,8 @@ public:
 
   int Width() const;
   int Height() const;
+
+  Vector2D<int> Size() const;
 
   void Move(Vector2D<int> dst_pos, const Rectangle<int>& src);
 
