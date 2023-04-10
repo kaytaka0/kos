@@ -26,8 +26,6 @@
 #include "memory_manager.hpp"
 #include "window.hpp"
 #include "layer.hpp"
-#include "timer.hpp"
-#include "frame_buffer.hpp"
 
 char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
 PixelWriter *pixel_writer;
@@ -45,12 +43,6 @@ int printk(const char *format, ...)
   result = vsprintf(s, format, ap);
   va_end(ap);
 
-  StartLAPICTimer();
-  console->PutString(s);
-  auto elapsed = LAPICTimerElapsed();
-  StopLAPICTimer();
-
-  sprintf(s, "[%9d]", elapsed);
   console->PutString(s);
   return result;
 }
@@ -142,7 +134,6 @@ extern "C" void kernelMainNewStack(
   printk("Welcome to Kos!\n");
   SetLogLevel(kWarn);
 
-  InitializeLAPICTimer();
   SetupSegments();
 
   const uint16_t kernel_cs = 1 << 3;
@@ -296,25 +287,39 @@ extern "C" void kernelMainNewStack(
   auto mouse_window = std::make_shared<Window>(kMouseCursorWidth, kMouseCursorHeight, frame_buffer_config.pixel_format);
   mouse_window->SetTransparentColor(kMouseTransparentColor);
   DrawMouseCursor(mouse_window->Writer(), {0, 0});
+  mouse_position = {200, 200};
+
+  auto main_window = std::make_shared<Window>(
+      160, 68, frame_buffer_config.pixel_format);
+  DrawWindow(*main_window->Writer(), "Hello Window");
+  WriteString(*main_window->Writer(), {24, 28}, "Welcome to", {0, 0, 0});
+  WriteString(*main_window->Writer(), {24, 44}, " KOS world!", {0, 0, 0});
 
   FrameBuffer screen;
   if (auto err = screen.Initialize(frame_buffer_config)) {
     Log(kError, "failed to initialize frame buffer: %s at %s:%d\n", err.Name(), err.File(), err.Line());
   }
+
   layer_manager = new LayerManager;
   layer_manager->SetWriter(&screen);
 
   auto bglayer_id = layer_manager->NewLayer()
-                        .SetWindow(bgwindow)
-                        .Move({0, 0})
-                        .ID();
+    .SetWindow(bgwindow)
+    .Move({0, 0})
+    .ID();
   mouse_layer_id = layer_manager->NewLayer()
-                       .SetWindow(mouse_window)
-                       .Move({200, 200})
-                       .ID();
+    .SetWindow(mouse_window)
+    .Move(mouse_position)
+    .ID();
+
+  auto main_window_layer_id = layer_manager->NewLayer()
+    .SetWindow(main_window)
+    .Move({100, 100})
+    .ID();
 
   layer_manager->UpDown(bglayer_id, 0);
   layer_manager->UpDown(mouse_layer_id, 1);
+  layer_manager->UpDown(main_window_layer_id, 1);
   layer_manager->Draw();
 
   while (true)

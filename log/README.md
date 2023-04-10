@@ -425,3 +425,23 @@ uint8_t* src_buf = src.config_.frame_buffer; // 正
 
 - 修正後の様子
 ![](../img/kos-day09c-framebuffer.gif)
+
+
+
+- day10b: ウィンドウを表示するようにソースコードの修正を行った後の動作確認で，描画にバグが発生した．
+  - 1. 新たに追加したウィンドウが複数個表示される．
+  - 2. ウィンドウの下側(y軸+側)の表示が乱れている．
+
+- GDBを用いたデバッグ方法
+- gdb ./kernel.elf
+- (gdb) target remote localhost:1234
+
+
+- frame_bufferのコピー処理に実装ミスがあった．
+```cpp
+// frame_buffer.cpp
+// FrameBuffer::Copy
+  const Vector2D<int> dst_start = ElementMax(dst_pos, {0, 0});
+  // const Vector2D<int> dst_end = ElementMax(dst_pos + src_size, dst_size);  // 誤
+  const Vector2D<int> dst_end = ElementMin(dst_pos + src_size, dst_size);     // 正
+```
