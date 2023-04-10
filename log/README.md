@@ -423,7 +423,8 @@ uint8_t* dst_buf = config_.frame_buffer + bytes_per_pixel *
 uint8_t* src_buf = src.config_.frame_buffer; // 正
 ```
 
-- 修正後の様子
+修正後の様子
+
 ![](../img/kos-day09c-framebuffer.gif)
 
 
@@ -431,6 +432,8 @@ uint8_t* src_buf = src.config_.frame_buffer; // 正
 - day10b: ウィンドウを表示するようにソースコードの修正を行った後の動作確認で，描画にバグが発生した．
   - 1. 新たに追加したウィンドウが複数個表示される．
   - 2. ウィンドウの下側(y軸+側)の表示が乱れている．
+
+![](../img/kos-day10b-frame-buffer-bug.png)
 
 - GDBを用いたデバッグ方法
 - gdb ./kernel.elf
@@ -445,3 +448,10 @@ uint8_t* src_buf = src.config_.frame_buffer; // 正
   // const Vector2D<int> dst_end = ElementMax(dst_pos + src_size, dst_size);  // 誤
   const Vector2D<int> dst_end = ElementMin(dst_pos + src_size, dst_size);     // 正
 ```
+
+
+- day10c: メイン関数のループ回数をカウントして表示するウィンドウを作成．
+- ループ内のhlt命令を消したため，マウス移動などしなくても爆速でカウントが増加する．
+- hlt命令アリの場合，マウスを動かした時にのみカウントが増加する．
+
+![](../img/kos-day10c-counter.png)
