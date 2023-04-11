@@ -459,3 +459,7 @@ uint8_t* src_buf = src.config_.frame_buffer; // 正
 
 - day10d: ウィンドウのチラチラ解消
 ![](../img/kos-day10d-counter.gif)
+
+
+- day10f: ウィンドウを動かす
+![](../img/kos-day10f-move-window.gif)
