@@ -160,4 +160,13 @@ Layer* LayerManager::FindLayerByPosition(Vector2D<int> pos, unsigned int exclude
     return *it;
 }
 
+Layer& Layer::SetDraggable(bool darggable) {
+    draggable_ = darggable;
+    return *this;
+}
+
+bool Layer::IsDraggable() const {
+    return draggable_;
+}
+
 LayerManager* layer_manager;

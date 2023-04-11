@@ -22,10 +22,14 @@ public:
 
     void DrawTo(FrameBuffer& screen, const Rectangle<int>& area) const;
 
+    Layer& SetDraggable(bool darggable);
+    bool IsDraggable() const;
+
 private:
     unsigned int id_;
     Vector2D<int> pos_;
     std::shared_ptr<Window> window_;
+    bool draggable_{false};
 };
 
 class LayerManager {
