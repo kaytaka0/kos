@@ -2,8 +2,10 @@
 
 #include <array>
 #include <cstdint>
+#include <deque>
 
 #include "x86_descriptor.hpp"
+#include "message.hpp"
 
 union InterruptDescriptorAttribute {
   // このdata変数は、bits変数のサイズ(16bit)をコンパイラに伝えるためだけに宣言している。
@@ -64,3 +66,5 @@ struct InterruptFrame {
 };
 
 void NotifyEndOfInterrupt();
+
+void InitializeInterrupt(std::deque<Message>* msg_queue);

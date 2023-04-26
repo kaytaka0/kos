@@ -58,3 +58,5 @@ private:
 };
 
 extern LayerManager* layer_manager;
+
+void InitializeLayer();

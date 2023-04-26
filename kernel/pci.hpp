@@ -138,3 +138,5 @@ namespace pci {
                                         uint8_t vector,
                                         unsigned int number_vector_exponent);
 }
+
+void InitializePCI();
