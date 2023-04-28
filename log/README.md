@@ -437,7 +437,7 @@ uint8_t* src_buf = src.config_.frame_buffer; // 正
 
 - GDBを用いたデバッグ方法
 - gdb ./kernel.elf
-- (gdb) target remote localhost:1234
+- (gdb) target remote localhost:12345
 
 
 - frame_bufferのコピー処理に実装ミスがあった．
@@ -467,3 +467,11 @@ uint8_t* src_buf = src.config_.frame_buffer; // 正
 ![](../img/kos-day10f-move-window.gif)
 
 ![](../img/kos-day10f-window.gif)
+
+
+- day11e
+  - gdbサーバの起動はqemu-run.shで指定されている$QEMU_OPTSから設定できる．
+  - QEMU実行前に以下のコマンドを実行してオプションを指定し，gdbでアタッチ，もしくはvscodeのデバッグ機能でアタッチすると，デバッグ作業ができる．
+```bash
+export QEMU_OPTS="-gdb tcp::12345 -S"
+```
