@@ -14,8 +14,19 @@ void InitializeLAPICTimer(std::deque<Message>& msg_queue) {
   timer_manager = new TimerManager{msg_queue};
   
   divide_config = 0b1011; // divide 1:1
+  lvt_timer = 0b001 << 16; // masked, one-shot
+
+  StartLAPICTimer();
+  acpi::WaitMilliseconds(100);
+  const auto elapsed = LAPICTimerElapsed();
+  StopLAPICTimer();
+
+  lapic_timer_freq = static_cast<unsigned long>(elapsed) * 10;
+
+  divide_config = 0b1011; // divide 1:1
   lvt_timer = (0b010 << 16) | InterruptVector::kLAPICTimer; // not-masked, periodic
-  initial_count = 0x1000000u;
+  // Interruption occurs for each `initial_count`
+  initial_count = lapic_timer_freq / kTimerFreq; 
 }
 
 void StartLAPICTimer() {
@@ -58,6 +69,7 @@ void TimerManager::AddTimer(const Timer& timer) {
 }
 
 TimerManager* timer_manager;
+unsigned long lapic_timer_freq;
 
 void LAPICTimerOnInterrupt() {
   timer_manager->Tick();

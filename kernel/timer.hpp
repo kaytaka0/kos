@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <queue>
 #include <vector>
+#include "acpi.hpp"
 #include "message.hpp"
 
 void InitializeLAPICTimer(std::deque<Message>& msg_queue);
@@ -40,5 +41,7 @@ class TimerManager {
 };
 
 extern TimerManager* timer_manager;
+extern unsigned long lapic_timer_freq;
+const int kTimerFreq = 100;
 
 void LAPICTimerOnInterrupt();
