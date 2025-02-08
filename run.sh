@@ -1,38 +1,47 @@
-#/bin/bash
+#!/bin/bash
 
 set -e
 
-KOS_ROOTDIR="$(cd "$( dirname $0 )" && pwd -P)"
+ARCH=`uname -m`
+TOOLS_ROOT_PATH="$HOME/src/github.com"
+EDK2_PATH="$TOOLS_ROOT_PATH/tianocore/edk2"
+BUILDKIT_PATH="$TOOLS_ROOT_PATH/uchan-nos/mikanos-build"
+
+KOS_ROOT_PATH="$(cd "$( dirname $0 )" && pwd -P)"
+
+. $BUILDKIT_PATH/devenv/buildenv.sh # setup ENV vars
+
+cd $EDK2_PATH
+. ./edksetup.sh # setup "build" command
+
 
 # Build kernel
 echo "\\n====[Build kernel]====="
-cd "$KOS_ROOTDIR/kernel"
+cd "$KOS_ROOT_PATH/kernel"
 make
 
 
-# Build the boot loader
+# Check if the boot loader exists
 echo "\\n====[Setup boot loader]========"
-EDK2_PATH="$HOME/src/github.com/tianocore/edk2"
-LOADER_PATH="$EDK2_PATH/Build/KosLoaderX64/DEBUG_CLANGPDB/X64/KosLoaderPkg/Loader/OUTPUT/Loader.efi"
+
+LOADER_PATH="$KOS_ROOT_PATH/BOOTX64.EFI"
 
 if [ -f $LOADER_PATH ]; then
     LOADER_UPDATED_AT=`date -r $LOADER_PATH`
 
     echo "Boot loader already exists. "
     echo "$LOADER_PATH: updated at $LOADER_UPDATED_AT"
-    cp $LOADER_PATH $KOS_ROOTDIR/DISK/EFI/BOOT/Loader.efi
+    mkdir -p $KOS_ROOT_PATH/DISK/EFI/BOOT && cp -r $LOADER_PATH $KOS_ROOT_PATH/DISK/EFI/BOOT/Loader.efi
 else
-    echo "Building boot loader..."
-    cd $EDK2_PATH
-    pwd
-    build
-    cp $LOADER_PATH $KOS_ROOTDIR/DISK/EFI/BOOT/Loader.efi
+    echo "Boot loader does not exists. exit..."
+    # TODO: build boot loader
+    exit
 fi
 
 
 # Run QEMU
 echo "\\n====[Run QEMU]======"
-cd "$KOS_ROOTDIR"
+cd "$KOS_ROOT_PATH"
 $HOME/src/github.com/uchan-nos/mikanos-build/devenv/run_qemu.sh \
-    $KOS_ROOTDIR/DISK/EFI/BOOT/Loader.efi \
-    $KOS_ROOTDIR/kernel/kernel.elf
+    $KOS_ROOT_PATH/DISK/EFI/BOOT/Loader.efi \
+    $KOS_ROOT_PATH/kernel/kernel.elf
