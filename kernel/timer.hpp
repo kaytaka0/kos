@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <queue>
 #include <vector>
+#include <limits>
+
 #include "acpi.hpp"
 #include "message.hpp"
 
