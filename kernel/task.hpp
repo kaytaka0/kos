@@ -4,8 +4,10 @@
 #include <array>
 #include <vector>
 #include <memory>
+#include <deque>
 
 #include "asmfunc.h"
+#include "error.hpp"
 
 struct TaskContext {
   uint64_t cr3, rip, rflags, reserved1; // offset 0x00
@@ -25,6 +27,10 @@ public:
     Task& InitContext(TaskFunc* f, int64_t data);
     TaskContext& Context();
 
+    uint64_t ID() const;
+    Task& Sleep();
+    Task& Wakeup();
+
 private:
     uint64_t id_;
     std::vector<uint64_t> stack_;
@@ -35,11 +41,18 @@ class TaskManager {
 public:
     TaskManager();
     Task& NewTask();
-    void SwitchTask();
+    void SwitchTask(bool current_sleep = false);
+    
+    void Sleep(Task* task);
+    Error Sleep(uint64_t id);
+    void Wakeup(Task* task);
+    Error Wakeup(uint64_t id);
+    
+
 private:
     std::vector<std::unique_ptr<Task>> tasks_{};
     uint64_t latest_id_{0};
-    size_t current_task_index_{0};
+    std::deque<Task*> running_{};
 };
 
 extern TaskManager* task_manager;
