@@ -3,6 +3,14 @@
 #include "timer.hpp"
 #include "segment.hpp"
 
+namespace {
+    template <class T, class U>
+    void Erase(T& c, const U& value) {
+        auto it = std::remove(c.begin(), c.end(), value);
+        c.erase(it, c.end());
+    }
+}
+
 Task::Task(uint64_t id) : id_{id} {
 }
 
@@ -62,7 +70,10 @@ TaskContext& Task::Context() {
 }
 
 TaskManager::TaskManager() {
-    running_.push_back(&NewTask());
+    Task& task = NewTask()
+        .SetLevel(current_level_)
+        .SetRunning(true);
+    running_[current_level_].push_back(&task);
 }
 
 Task& TaskManager::NewTask() {
@@ -71,29 +82,48 @@ Task& TaskManager::NewTask() {
 }
 
 void TaskManager::SwitchTask(bool current_sleep) {
-    Task* current_task = running_.front();
-    running_.pop_front();
-    if (!current_sleep) {
-        running_.push_back(current_task);
-    }
-    Task* next_task = running_.front();
+    // current_level_ のランキューを一回転させる
+    auto& level_queue = running_[current_level_];
+    Task* current_task = level_queue.front();
+    level_queue.pop_front();
 
+    if (!current_sleep) {
+        level_queue.push_back(current_task);
+    }
+    if (level_queue.empty()) {
+        level_changed_ = true;
+    }
+
+    // 実行レベルの見直し。次に実行するタスクを探し、そのランキューのレベルを取得する。
+    if (level_changed_) {
+        level_changed_ = false;
+        for (int lv = kMaxLevel; lv >= 0; --lv) {
+            if (!running_[lv].empty()) {
+                current_level_ =  lv;
+                break;
+            }
+        }
+    }
+
+    // 次に実行するタスクを取得 & 次のタスクにスイッチング
+    Task* next_task = running_[current_level_].front();
     SwitchContext(&next_task->Context(), &current_task->Context());
+    
 }
 
 void TaskManager::Sleep(Task* task) {
-    auto it = std::find(running_.begin(), running_.end(), task);
+    if (!task->Running()) {
+        return;
+    }
 
-    if (it == running_.begin()) {
+    task->SetRunning(false);
+
+    if (task == running_[current_level_].front()) {
         SwitchTask(true);
         return;
     }
-    
-    if (it == running_.end()) {
-        return;
-    }
-    
-    running_.erase(it);
+
+    Erase(running_[task->Level()], task);
 }
 
 Error TaskManager::Sleep(uint64_t id) {
@@ -106,26 +136,73 @@ Error TaskManager::Sleep(uint64_t id) {
     return MAKE_ERROR(Error::kSuccess);
 }
 
-void TaskManager::Wakeup(Task* task) {
-    auto it = std::find(running_.begin(), running_.end(), task);
-    if (it == running_.end()) {
-        running_.push_back(task);
+void TaskManager::Wakeup(Task* task, int level) {
+    // 現在実行しているタスクの実行レベルを変更するだけ
+    if (task->Running()) {
+        ChangeLevelRunning(task, level);
+        return;
     }
+
+    if (level < 0) {
+        level = task->Level();
+    }
+
+    task->SetLevel(level);
+    task->SetRunning(true);
+
+    running_[level].push_back(task);
+    if (level > current_level_) {
+        // current_level_ よりレベルが高いタスクがあるってことなので、実行中のランキューを見直す必要がある。level_changed_ をマークしておく。
+        level_changed_ = true;
+    }
+    return;
 }
 
-Error TaskManager::Wakeup(uint64_t id) {
+Error TaskManager::Wakeup(uint64_t id, int level) {
     auto it = std::find_if(tasks_.begin(), tasks_.end(), [id](const auto& t){return t->ID() == id;});
     if (it == tasks_.end()) {
         return MAKE_ERROR(Error::kNoSuchTask);
     }
     
-    Wakeup(it->get());
+    Wakeup(it->get(), level);
     return MAKE_ERROR(Error::kSuccess);
     
 }
 
 Task& TaskManager::CurrentTask() {
-    return *running_.front();
+    return *running_[current_level_].front();
+}
+
+void TaskManager::ChangeLevelRunning(Task* task, int level) {
+    if (level < 0 || level == task->Level()) {
+        return;
+    }
+
+    // 別のタスク (実行中のタスク以外) のレベルを変更する
+    if (task != running_[current_level_].front()) {
+        Erase(running_[task->Level()], task);
+        running_[level].push_back(task);
+        task->SetLevel(level);
+        if (level > current_level_) {
+            level_changed_ = true;
+        }
+        return;
+    }
+
+    // 実行中のタスクのレベルを変更する
+    running_[current_level_].pop_front();
+    // 変更先のランキューの末尾ではなく、先頭に追加。なぜなら実行中のタスクはランキューの先頭にある必要があるため。
+    running_[level].push_front(task); 
+    task->SetLevel(level);
+    if (level >= current_level_) {
+        // この場合、現状のタスクを引き続き実行していれば良いので level_changed_ は設定しない
+        current_level_ = level;
+    } else {
+        // この場合、現状のタスクよりも高レベルのタスクがある可能性がある。
+        // タスク切り替えを考える必要があるため level_changed_ を設定。
+        current_level_ = level;
+        level_changed_ = true;
+    }
 }
 
 Error TaskManager::SendMessage(uint64_t id, const Message& msg) {
