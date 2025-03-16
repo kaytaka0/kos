@@ -475,3 +475,30 @@ uint8_t* src_buf = src.config_.frame_buffer; // 正
 ```bash
 export QEMU_OPTS="-gdb tcp::12345 -S"
 ```
+
+## 2025/03/16
+- day15a
+  - TaskB のウィンドウをマウスで動かすと、ウィンドウの描画が一部だけゴミのように残ってしまう問題を修正する節
+  - TaskB ウィンドウの描画処理 (Draw メソッド)と マウスで TaskB のウィンドウを移動させる描画処理 (MoveRelative) がデータ競合を起こす。どちらもスクリーンのバックバッファ、フレームバッファを書き換えているのでこれが起こるらしい。。
+  - あー、なるほど、それぞれの描画処理は別のコンテキストで実行されているのか。メインタスクと TaskB のコンテキストでそれぞれ描画が行われている
+  - 回避方法: ウィンドウの描画や移動の処理を、すべて 1 つの専用タスクで実行させる。これで競合はなくなる。
+    - 専用タスク == メインタスク
+
+- TaskB 関数の中で cli してるが、メッセージ受信できた際に sti してないように見える。これでいいのかな？
+→ まあよしとして先に進もう。
+```cpp
+// void TaskB(uint64_t task_id, int64_t data)
+ while (true) {
+  __asm__("cli");
+  auto msg = task.ReceiveMessage();
+  if (!msg) {
+    task.Sleep();
+    __asm__("sti");
+    continue;
+  }
+
+  if (msg->type == Message::kLayerFinish) {
+    break;
+  }
+}
+```
