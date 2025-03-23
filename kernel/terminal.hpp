@@ -13,7 +13,7 @@ public:
 
     Terminal();
     unsigned int LayerId() const { return layer_id_; }
-    void BlinkCursor();
+    Rectangle<int> BlinkCursor();
 
 private:
     std::shared_ptr<ToplevelWindow> window_;
