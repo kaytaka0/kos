@@ -24,10 +24,6 @@ Rectangle<int> Terminal::BlinkCursor() {
     cursor_visible_ = !cursor_visible_;
     DrawCursor(cursor_visible_);
 
-    return {
-        ToplevelWindow::kTopLeftMargin + Vector2D<int>{4 + 8*cursor_.x, 5 + 16*cursor_.y},
-        {7, 15}
-    };
     return {CalcCursorPos(), {7, 15}};
 }
 
@@ -76,7 +72,7 @@ Rectangle<int> Terminal::InputKey(
         if (cursor_.x < kColumns - 1 && linebuf_index_ < kLineMax - 1) {
             linebuf_[linebuf_index_] = ascii;
             ++linebuf_index_;
-            WriteAscii(*window_->InnerWriter(), CalcCursorPos(), ascii, {255, 255, 255} );
+            WriteAscii(*window_->Writer(), CalcCursorPos(), ascii, {255, 255, 255} );
             ++cursor_.x;
         }
     }

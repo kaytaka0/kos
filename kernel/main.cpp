@@ -116,15 +116,15 @@ void InputTextWindow(char c) {
   }
 
   auto pos = []() {
-    return Vector2D<int>{4 + 8 *text_window_index, 6};
+    return Vector2D<int>{4 + 8*text_window_index, 6};
   };
-  const int max_chars = (text_window->Width() - 8) / 8 - 1;
+  const int max_chars = (text_window->InnerSize().x - 8) / 8 - 1;
   if (c == '\b' && text_window_index > 0) {
     DrawTextCursor(false);
     --text_window_index;
     FillRectangle(*text_window->InnerWriter(), pos(), {8, 16}, ToColor(0xffffff));
     DrawTextCursor(true);
-  } else if (c > ' ' && text_window_index < max_chars) {
+  } else if (c >= ' ' && text_window_index < max_chars) {
     DrawTextCursor(false);
     WriteAscii(*text_window->InnerWriter(), pos(), c, ToColor(0));
     ++text_window_index;
@@ -146,8 +146,8 @@ void TaskB(uint64_t task_id, int64_t data) {
   while (true) {
     ++count;
     sprintf(str, "%010d", count);
-    FillRectangle(*task_b_window->Writer(), {20, 4}, {8 * 10, 16}, {0xc6, 0xc6, 0xc6});
-    WriteString(*task_b_window->Writer(), {20, 4}, str, {0, 0, 0});
+    FillRectangle(*task_b_window->InnerWriter(), {20, 4}, {8 * 10, 16}, {0xc6, 0xc6, 0xc6});
+    WriteString(*task_b_window->InnerWriter(), {20, 4}, str, {0, 0, 0});
 
     Message msg{Message::kLayer, task_id};
     msg.arg.layer.layer_id = task_b_window_layer_id;
