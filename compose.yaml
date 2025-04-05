@@ -1,0 +1,17 @@
+
+services:
+  edk2-build:
+    build: .
+    volumes:
+      - type: bind
+        source: ./KosLoaderPkg/
+        target: /home/vscode/KosLoaderPkg
+        read_only: false
+      - type: bind
+        source: ./kernel
+        target: /home/vscode/kernel
+      - type: bind
+        source: ./DISK/EFI/BOOT
+        target: /home/vscode/output
+        read_only: false
+    command: ["/home/vscode/build_kernel_loader.sh"]
