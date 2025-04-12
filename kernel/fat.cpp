@@ -3,8 +3,6 @@
 #include <cstring>
 #include <cctype>
 
-#include "logger.hpp"
-
 namespace fat {
     BPB* boot_volume_image;
     unsigned long bytes_per_cluster;
@@ -52,7 +50,6 @@ namespace fat {
     }
 
     DirectoryEntry* FindFile(const char* name, unsigned long directory_cluster) {
-        Log(kWarn, "FindFile: %s\n", name);
         if (directory_cluster == 0) {
             directory_cluster = boot_volume_image->root_cluster;
         }
@@ -61,17 +58,13 @@ namespace fat {
             auto dir = GetSectorByCluster<DirectoryEntry>(directory_cluster);
 
             for (int i = 0; i < bytes_per_cluster / sizeof(DirectoryEntry); ++i) {
-                Log(kWarn, "dir[%d]: %s\n", i, dir[i].name);
                 if (NameIsEqual(dir[i], name)) {
-                    Log(kWarn, "FindFile: found, dir[%d]: %s\n", i, dir[i].name);
                     return &dir[i];
                 }
             }
             
             directory_cluster = NextCluster(directory_cluster);
         }
-        Log(kWarn, "FindFile: not found\n");
-
         return nullptr;
     }
 
