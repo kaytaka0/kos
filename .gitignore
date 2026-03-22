@@ -37,3 +37,5 @@ kernel/kernel.elf
 *.app
 
 disk.img
+
+edk2
