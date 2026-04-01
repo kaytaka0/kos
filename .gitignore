@@ -1,6 +1,8 @@
 BOOTX64.EFI
 .vscode/
 kernel/kernel.elf
+x86_64-elf/
+x86_64-elf.tar.gz
   
 # Prerequisites
 *.d

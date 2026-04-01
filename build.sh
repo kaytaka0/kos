@@ -1,5 +1,7 @@
 #!/bin/sh -eu
 
+. ./devenv/buildenv.sh # setup ENV vars
+
 make ${MAKE_OPTS:-} -C kernel kernel.elf
 
 for MK in $(ls apps/*/Makefile)

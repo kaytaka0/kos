@@ -87,6 +87,9 @@ RUN for item in \
 COPY build_kernel_loader.sh "/home/${USERNAME}/build_kernel_loader.sh"
 RUN chmod +x "/home/${USERNAME}/build_kernel_loader.sh"
 
+# kernel build script
+COPY build.sh "/home/${USERNAME}/build.sh"
+RUN chmod +x "/home/${USERNAME}/build.sh"
 
 # switch to unprivileged
 USER ${USERNAME}

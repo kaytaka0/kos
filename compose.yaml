@@ -14,4 +14,7 @@ services:
         source: ./DISK/EFI/BOOT
         target: /home/vscode/output
         read_only: false
+      - type: bind
+        source: ./devenv
+        target: /home/vscode/devenv
     command: ["/home/vscode/build_kernel_loader.sh"]
