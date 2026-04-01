@@ -6,6 +6,36 @@
 #include "layer.hpp"
 #include "pci.hpp"
 #include "asmfunc.h"
+#include "elf.hpp"
+
+namespace {
+
+std::vector<char*> MakeArgVector(char* command, char* first_arg) {
+    std::vector<char*> argv;
+    argv.push_back(command);
+
+    char* p = first_arg;
+    while (true) {
+        while (isspace(p[0])) {
+            ++p;
+        }
+        if (p[0] == 0) {
+            break;
+        }
+        argv.push_back(p);
+
+        while (p[0] != 0 && !isspace(p[0])) {
+            ++p;
+        }
+        if (p[0] == 0) {
+            break;
+        }
+        p[0] = 0;
+        ++p;
+    }
+    return argv;
+}
+}
 
 Terminal::Terminal() {
     window_ = std::make_shared<ToplevelWindow>(
@@ -193,7 +223,7 @@ void Terminal::ExecuteLine() {
             Print(command);
             Print("\n");
         } else {
-            ExecuteFile(*file_entry);
+            ExecuteFile(*file_entry, command, first_arg);
         }
     }
 }
@@ -231,7 +261,7 @@ void Terminal::Print(const char* s) {
     DrawCursor(true);
 }
 
-void Terminal::ExecuteFile(const fat::DirectoryEntry& file_entry) {
+void Terminal::ExecuteFile(const fat::DirectoryEntry& file_entry, char* command, char* first_arg) {
     auto cluster = file_entry.FirstCluster();
     auto remain_bytes = file_entry.file_size;
     
@@ -249,9 +279,56 @@ void Terminal::ExecuteFile(const fat::DirectoryEntry& file_entry) {
         cluster = fat::NextCluster(cluster);
     }
 
-    using Func = void ();
-    auto f = reinterpret_cast<Func*>(&file_buf[0]);
-    f();
+    auto elf_header = reinterpret_cast<Elf64_Ehdr*>(&file_buf[0]);
+
+    if (memcmp(elf_header->e_ident, "\x7f" "ELF", 4) != 0) {
+        using Func = void ();
+        auto f = reinterpret_cast<Func*>(&file_buf[0]);
+        f();
+        return;
+    }
+
+    auto argv = MakeArgVector(command, first_arg);
+
+    //=== ELF loader ===//
+
+    // ELF program header
+    auto phdr = reinterpret_cast<Elf64_Phdr*>(reinterpret_cast<uint64_t>(elf_header) + elf_header->e_phoff);
+
+    uint64_t first = 0xffffffffffffffff;
+    uint64_t last = 0;
+
+    for (int i = 0; i < elf_header->e_phnum; ++i) {
+        if (phdr[i].p_type != PT_LOAD) continue;
+        if (phdr[i].p_vaddr < first) first = phdr[i].p_vaddr;
+        if (phdr[i].p_vaddr + phdr[i].p_memsz > last) last = phdr[i].p_vaddr + phdr[i].p_memsz;
+    }
+
+    // アプリ実行用のメモリ領域を確保。ここには .bss のバイト数も含めた領域を確保する
+    std::vector<uint8_t> app_memory(last - first);
+
+    for (int i = 0; i < elf_header->e_phnum; ++i) {
+        if (phdr[i].p_type != PT_LOAD) continue;
+        
+        uint64_t dest = reinterpret_cast<uint64_t>(&app_memory[0]) + (phdr[i].p_vaddr - first);
+        uint64_t src = reinterpret_cast<uint64_t>(elf_header) + phdr[i].p_offset;
+
+        memcpy(reinterpret_cast<void*>(dest), reinterpret_cast<void*>(src), phdr[i].p_filesz);
+        memset(reinterpret_cast<void*>(dest + phdr[i].p_filesz), 0, phdr[i].p_memsz - phdr[i].p_filesz);
+    }
+
+    // エントリーポイントの設定
+    auto entry_addr =  elf_header->e_entry - first;
+    entry_addr += reinterpret_cast<uint64_t>(&app_memory[0]);
+    using Func = int (int, char**);
+
+    auto f = reinterpret_cast<Func*>(entry_addr);
+
+    auto ret = f(argv.size(), &argv[0]);
+
+    char s[64];
+    sprintf(s, "app exited. ret = %d\n", ret);
+    Print(s);
 }
 
 Rectangle<int> Terminal::HistoryUpDown(int direction) {
